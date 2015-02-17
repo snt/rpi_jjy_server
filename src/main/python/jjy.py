@@ -19,13 +19,16 @@ def pwm_setup():
 # 0 800 [ms]
 SIGNAL_LENGTHS = {'M': 0.2, '1': 0.5, '0': 0.8}
 
+DEBUG=False
+
 def send_signal(signal):
   for x in range(1,1000,5): 
     pwm.add_channel_pulse(0, IO_PIN, x ,3)
   time.sleep(SIGNAL_LENGTHS[signal])
   pwm.clear_channel_gpio(0, IO_PIN)
-  sys.stdout.write(signal)
-  sys.stdout.flush()
+  if DEBUG:
+    sys.stdout.write(signal)
+    sys.stdout.flush()
 
 def schedule_next (scheduler):
   a = datetime.datetime.now() + datetime.timedelta(minutes=1)
@@ -36,13 +39,13 @@ def schedule_next (scheduler):
   signals = JJY_FORMAT.format(*(data + parities))
   for i, signal in enumerate(signals):
     scheduler.enterabs(next0sec + i, 1, send_signal, (signal,))
-  scheduler.enterabs(time.mktime(a.timetuple()), 1, schedule_next, (scheduler,)) 
+  scheduler.enterabs(next0sec, 1, schedule_next, (scheduler,)) 
+  print datetime.datetime.now()
 
 if __name__ == '__main__':
   pwm_setup()
   scheduler = sched.scheduler(time.time, time.sleep)
   schedule_next(scheduler)
   scheduler.run()
-  while True:
-    time.sleep(60)
+  print "schedule empty"
 
